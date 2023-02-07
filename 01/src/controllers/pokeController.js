@@ -46,18 +46,20 @@ const changePokeNickName = async (req, res) => {
   try {
     const queryPokemon = `
       SELECT * FROM pokemons
-      WHERE pokemon_id = $1
-    `
+      WHERE pokemon_id = $1`
 
     const queryPokemonResult = await db.query(queryPokemon, [pokeId])
     const [pokemon] = queryPokemonResult.rows
 
+
     if (!pokemon) {
-      return res.status(404).json({ message: 'Pokemon não encontrado.' })
+      return res.status(404)
+        .json({ message: 'Pokemon não encontrado.' })
     }
 
     if (pokemon.usuario_id !== authenticatedUser.usuario_id) {
-      return res.status(401).json({ message: 'Este pokemon pertence à outro usuário!' })
+      return res.status(403)
+        .json({ message: 'Este pokemon pertence à outro usuário!' })
     }
 
     const patchPokemon = `
@@ -112,7 +114,8 @@ const getPokemonById = async (req, res) => {
   const { pokeId } = req.params
 
   if (isNaN(Number(pokeId))) {
-    return res.status(400).json({ message: 'O id precisa ser um número.' })
+    return res.status(400)
+      .json({ message: 'O id precisa ser um número.' })
   }
 
   try {
@@ -134,6 +137,11 @@ const getPokemonById = async (req, res) => {
     const [pokemon] = queryResult.rows
     const formattedPokemon = {}
 
+    if (!pokemon) {
+      return res.status(404)
+        .json({ message: 'Pokemon não encontrado.' })
+    }
+
     for (const key in pokemon) {
       const prop = key.substring(key.indexOf('_') + 1)
       if (key === 'usuario_nome') formattedPokemon.usuario = pokemon[key]
@@ -146,9 +154,47 @@ const getPokemonById = async (req, res) => {
   }
 }
 
+const removePokemonById = async (req, res) => {
+  const { authenticatedUser } = req
+  const { pokeId } = req.params
+
+  if (isNaN(Number(pokeId))) {
+    return res.status(400)
+      .json({ message: 'O id precisa ser um número.' })
+  }
+
+  try {
+    const queryPokemonResult = await db.query('SELECT * FROM pokemons WHERE pokemon_id = $1', [pokeId])
+    const [pokemon] = queryPokemonResult.rows
+
+    if (!pokemon) {
+      return res.status(404)
+        .json({ message: 'Pokemon não encontrado.' })
+    }
+
+    if (authenticatedUser.usuario_id !== pokemon.usuario_id) {
+      return res.status(403)
+        .json({ message: 'Este pokemon pertence à outro usuário.' })
+    }
+
+    const queryRemovePokemon = `
+      DELETE FROM pokemons
+      WHERE pokemon_id = $1
+      RETURNING *`
+
+    const queryRemovePokemonResult = await db.query(queryRemovePokemon, [pokeId])
+    const [removedPokemon] = queryRemovePokemonResult.rows
+
+    return res.json(removedPokemon)
+  } catch (error) {
+    return res.status(500).json(error.message)
+  }
+}
+
 module.exports = {
   createPokemon,
   changePokeNickName,
   getAllPokemons,
-  getPokemonById
+  getPokemonById,
+  removePokemonById
 }

@@ -4,7 +4,8 @@ const {
   createPokemon,
   changePokeNickName,
   getAllPokemons,
-  getPokemonById
+  getPokemonById,
+  removePokemonById
 } = require('../controllers/pokeController')
 
 const pokeRoute = Router()
@@ -14,5 +15,6 @@ pokeRoute.post('/register-pokemon', createPokemon)
 pokeRoute.get('/pokemon', getAllPokemons)
 pokeRoute.get('/pokemon/:pokeId', getPokemonById)
 pokeRoute.patch('/pokemon/:pokeId', changePokeNickName)
+pokeRoute.delete('/pokemon/:pokeId', removePokemonById)
 
 module.exports = pokeRoute
