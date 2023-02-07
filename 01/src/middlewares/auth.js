@@ -3,9 +3,9 @@ const jwt = require('jsonwebtoken')
 
 const authenticateUser = async (req, res, next) => {
   const { authorization } = req.headers
-  const [, userToken] = authorization.split(' ')
 
   try {
+    const [, userToken] = authorization.split(' ')
     const { userId } = jwt.verify(userToken, "SenhaSegura")
 
     const queryUser = `

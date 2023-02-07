@@ -54,7 +54,7 @@ const connectUser = async (req, res) => {
     }
 
     const { usuario_senha: _, ...connectedUser } = user
-    const userToken = jwt.sign({ userId: connectedUser.usuario_id }, "SenhaSegura", { expiresIn: '1h' })
+    const userToken = jwt.sign({ userId: connectedUser.usuario_id }, "SenhaSegura", { expiresIn: '8h' })
 
     return res.json({ ...connectedUser, userToken })
   } catch (error) {
