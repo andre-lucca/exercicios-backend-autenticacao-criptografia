@@ -108,8 +108,47 @@ const getAllPokemons = async (req, res) => {
   }
 }
 
+const getPokemonById = async (req, res) => {
+  const { pokeId } = req.params
+
+  if (isNaN(Number(pokeId))) {
+    return res.status(400).json({ message: 'O id precisa ser um número.' })
+  }
+
+  try {
+    const queryPokemonById = `
+      SELECT
+        p.pokemon_id,
+        u.usuario_nome,
+        p.pokemon_nome,
+        p.pokemon_apelido,
+        p.pokemon_habilidades,
+        p.pokemon_imagem
+      FROM pokemons p
+      JOIN usuarios u
+      ON u.usuario_id = p.usuario_id
+      WHERE p.pokemon_id = $1
+      ORDER BY p.pokemon_id ASC;`
+
+    const queryResult = await db.query(queryPokemonById, [pokeId])
+    const [pokemon] = queryResult.rows
+    const formattedPokemon = {}
+
+    for (const key in pokemon) {
+      const prop = key.substring(key.indexOf('_') + 1)
+      if (key === 'usuario_nome') formattedPokemon.usuario = pokemon[key]
+      formattedPokemon[prop] = pokemon[key]
+    }
+
+    return res.json(formattedPokemon)
+  } catch (error) {
+    return res.status(500).json(error.message)
+  }
+}
+
 module.exports = {
   createPokemon,
   changePokeNickName,
-  getAllPokemons
+  getAllPokemons,
+  getPokemonById
 }
