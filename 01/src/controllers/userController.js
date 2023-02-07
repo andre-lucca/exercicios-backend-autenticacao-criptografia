@@ -1,5 +1,6 @@
 const db = require('../services/dbConnection')
 const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
 
 const createUser = async (req, res) => {
   const { nome: userName, email: userEmail, senha: userPassword } = req.body
@@ -29,6 +30,39 @@ const createUser = async (req, res) => {
   }
 }
 
+const connectUser = async (req, res) => {
+  const { email: userEmail, senha: userPassword } = req.body
+
+  if (!userEmail || !userPassword) {
+    return res.status(400)
+      .json({ message: 'E-mail e senha são obrigatórios!' })
+  }
+
+  try {
+    const queryUser = `
+      SELECT * FROM usuarios
+      WHERE usuario_email = $1
+    `
+
+    const result = await db.query(queryUser, [userEmail])
+    const [user] = result.rows
+    const isPasswordValid = await bcrypt.compare(userPassword, user.usuario_senha)
+
+    if (!user || !isPasswordValid) {
+      return res.status(401)
+        .json({ message: 'E-mail ou senha inválido.' })
+    }
+
+    const { usuario_senha: _, ...connectedUser } = user
+    const userToken = jwt.sign({ userId: connectedUser.usuario_id }, "SenhaSegura", { expiresIn: '1h' })
+
+    return res.json({ ...connectedUser, userToken })
+  } catch (error) {
+    return res.status(500).json(error.message)
+  }
+}
+
 module.exports = {
-  createUser
+  createUser,
+  connectUser
 }
